@@ -3,6 +3,7 @@ import random
 import http.server
 import interactions
 import threading
+from urllib.parse import urlparse, parse_qs
 
 # settings
 HTTP_HOST = '0.0.0.0'
@@ -36,13 +37,21 @@ class otpwd_web_handler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/html')
         self.end_headers()
 
+        query = parse_qs(urlparse(self.path).query)
+        otpassword = query.get('otpassword', [''])[0]
+
         global GPWD
-        pwd = GPWD
-        GPWD = ''
+        pwd = ''
+        query = parse_qs(urlparse(self.path).query)
+        otpassword = query.get('otpassword', [''])[0]
+        if GPWD != '' and otpassword == GPWD:
+            pwd = GPWD
+            GPWD = ''
+            print(f'Got one-time password: {pwd}')
+        else:
+            pwd = ''
+            print(f"Got one-time password: ''")
         self.wfile.write(bytes(pwd, 'utf-8'))
-        if pwd == '':
-            pwd = "''"
-        print(f'Got one-time password: {pwd}')
 
 def otpwd_bot():
     global GBOT
