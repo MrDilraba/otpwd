@@ -32,9 +32,13 @@ async def gen_pwd(ctx):
     fmt = 'Gen one-time password: {0}@{1}'
     rsp = fmt.format(name, pwd)
     msg = fmt.format(ctx.user.global_name, '\*\*\*\*\*\*')
-    await ctx.send(rsp, ephemeral=True, delete_after=OTP_TIMEOUT)
-    await ctx.channel.send(msg, silent=True)
-    print(rsp)
+    try:
+        await ctx.channel.send(msg, silent=True)
+        await ctx.send(rsp, ephemeral=True, delete_after=OTP_TIMEOUT)
+        print(rsp)
+    except:
+        await ctx.send('Invalid channel', ephemeral=True, delete_after=OTP_TIMEOUT)
+        print(rsp + ', error: invalid channel')
 
 class otpwd_web_handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
