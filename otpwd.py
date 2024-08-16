@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qs
 # settings
 HTTP_HOST = '0.0.0.0'
 HTTP_PORT = 1180
-OTP_TIMEOUT = 30
+OTP_TIMEOUT = 60
 BOT_TOEKN = '<token>'
 
 # global vars
@@ -28,9 +28,12 @@ async def gen_pwd(ctx):
     pwd = ''.join(random.sample('0123456789', 6))
     name = ctx.user.username
     GPWD[name] = pwd
-    rsp = f'Gen one-time password done, login account: {name}@{pwd}'
+
+    fmt = 'Gen one-time password: {0}@{1}'
+    rsp = fmt.format(name, pwd)
+    msg = fmt.format(ctx.user.global_name, '\*\*\*\*\*\*')
     await ctx.send(rsp, ephemeral=True, delete_after=OTP_TIMEOUT)
-    await ctx.channel.send(rsp.replace(pwd, '\*\*\*\*\*\*'), silent=True)
+    await ctx.channel.send(msg, silent=True)
     print(rsp)
 
 class otpwd_web_handler(http.server.BaseHTTPRequestHandler):
