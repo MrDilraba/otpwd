@@ -1,4 +1,3 @@
-import time
 import random
 import http.server
 import interactions
@@ -8,10 +7,11 @@ from urllib.parse import urlparse, parse_qs
 # settings
 HTTP_HOST = '0.0.0.0'
 HTTP_PORT = 1180
+OTP_TIMEOUT = 30
 BOT_TOEKN = '<token>'
 
 # global vars
-GPWD = ''
+GPWD = {}
 GBOT = None
 
 @interactions.listen()
@@ -25,10 +25,12 @@ async def on_ready():
 )
 async def gen_pwd(ctx):
     global GPWD
-    pwd = random.sample('0123456789', 6)
-    GPWD = ''.join(pwd)
-    rsp = f'Gen one-time password: {GPWD}'
-    await ctx.respond(rsp)
+    pwd = ''.join(random.sample('0123456789', 6))
+    name = ctx.user.username
+    GPWD[name] = pwd
+    rsp = f'Gen one-time password done, login account: {name}@{pwd}'
+    await ctx.send(rsp, ephemeral=True, delete_after=OTP_TIMEOUT)
+    await ctx.channel.send(rsp.replace(pwd, '\*\*\*\*\*\*'), silent=True)
     print(rsp)
 
 class otpwd_web_handler(http.server.BaseHTTPRequestHandler):
@@ -38,15 +40,15 @@ class otpwd_web_handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
         query = parse_qs(urlparse(self.path).query)
+        account = query.get('account', [''])[0]
         otpassword = query.get('otpassword', [''])[0]
 
         global GPWD
         pwd = ''
-        query = parse_qs(urlparse(self.path).query)
-        otpassword = query.get('otpassword', [''])[0]
-        if GPWD != '' and otpassword == GPWD:
-            pwd = GPWD
-            GPWD = ''
+        if account != '' and account in GPWD:
+            pwd = GPWD[account]
+        if otpassword != '' and otpassword == pwd:
+            GPWD[account] = None
             print(f'Got one-time password: {pwd}')
         else:
             pwd = ''
